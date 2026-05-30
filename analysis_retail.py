@@ -1,0 +1,83 @@
+import pandas as pd
+
+df = pd.read_csv('retail_sales_dataset.csv')
+df = df.dropna()
+df = df.drop_duplicates()
+df["Date"] = pd.to_datetime(df["Date"])
+df["Month"] = df["Date"].dt.month
+df["Weekday"] = df["Date"].dt.day_name()
+print("ОБЩАЯ АНАЛИТИКА")
+total_revenue = df["Total Amount"].sum()
+avg_order_value = df["Total Amount"].mean()
+total_customers = df["Customer ID"].nunique()
+total_transactions = len(df)
+avg_quantity = df["Quantity"].mean()
+
+print(f"Общая выручка: ${total_revenue}")
+print(f"Средний чек: ${avg_order_value}")
+print(f"Среднее количество товаров в чеке: {avg_quantity}")
+print(f"Уникальных покупателей: {total_customers}")
+print(f"Всего транзакций: {total_transactions}")
+
+print("KPI (КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ ЭФФЕКТИВНОСТИ)")
+clv = total_revenue / total_customers
+print(f"CLV (средняя выручка на клиента): ${clv}")
+purchase_frequency = total_transactions / total_customers
+print(f"Частота покупок (транзакций на клиента): {purchase_frequency}")
+avg_price_per_unit = df["Price per Unit"].mean()
+print(f"Средняя цена за единицу товара: ${avg_price_per_unit}")
+repeat_customers = df.groupby("Customer ID").size()
+repeat_customers_count = len(repeat_customers[repeat_customers > 1])
+repeat_rate = (repeat_customers_count / total_customers) * 100
+print(f"Клиентов с повторными покупками: {repeat_customers_count} ({repeat_rate:.1f}%)")
+top_category = df.groupby("Product Category")["Total Amount"].sum().idxmax()
+top_category_revenue = df.groupby("Product Category")["Total Amount"].sum().max()
+print(f"Топ категория: {top_category} (${top_category_revenue})")
+top_category_by_qty = df.groupby("Product Category")["Quantity"].sum().idxmax()
+top_category_qty = df.groupby("Product Category")["Quantity"].sum().max()
+print(f"Топ категория по объему продаж: {top_category_by_qty} ({top_category_qty} шт.)")
+men_revenue = df[df["Gender"] == "Male"]["Total Amount"].sum()
+women_revenue = df[df["Gender"] == "Female"]["Total Amount"].sum()
+men_share = (men_revenue / total_revenue) * 100
+women_share = (women_revenue / total_revenue) * 100
+print(f"Доля выручки мужчин: {men_share:.1f}% (${men_revenue})")
+print(f"Доля выручки женщин: {women_share:.1f}% (${women_revenue})")
+print("ВЫРУЧКА ПО КАТЕГОРИЯМ")
+print(df.groupby("Product Category")["Total Amount"].sum().sort_values(ascending=False))
+print("КОЛИЧЕСТВО ПРОДАННЫХ ТОВАРОВ ПО КАТЕГОРИЯМ")
+print(df.groupby("Product Category")["Quantity"].sum().sort_values(ascending=False))
+print("ГЕНДЕРНЫЙ АНАЛИЗ")
+male_sum = df[df["Gender"] == "Male"].groupby("Product Category")["Total Amount"].sum()
+female_sum = df[df["Gender"] == "Female"].groupby("Product Category")["Total Amount"].sum()
+print("Топ категорий у мужчин:\n", male_sum.sort_values(ascending=False))
+print("\nТоп категорий у женщин:\n", female_sum.sort_values(ascending=False))
+print(f"\nКатегория, на которую мужчины потратили больше всего: {male_sum.idxmax()}")
+print(f"Категория, на которую женщины потратили больше всего: {female_sum.idxmax()}")
+count_of_men_purchase = len(df[df["Gender"] == "Male"])
+count_of_women_purchase = len(df[df["Gender"] == "Female"])
+print(f"\nКоличество покупок мужчин: {count_of_men_purchase}")
+print(f"Количество покупок женщин: {count_of_women_purchase}")
+print("СЕЗОННОСТЬ (ПО МЕСЯЦАМ)")
+month_names = {1: "Янв", 2: "Фев", 3: "Мар", 4: "Апр", 5: "Май", 6: "Июн",
+               7: "Июл", 8: "Авг", 9: "Сен", 10: "Окт", 11: "Ноя", 12: "Дек"}
+monthly_revenue = df.groupby("Month")["Total Amount"].sum()
+for month in range(1, 13):
+    rev = monthly_revenue.get(month, 0)
+    print(f"{month_names[month]}: ${rev}")
+best_month = monthly_revenue.idxmax()
+print(f"\nСамый прибыльный месяц: {month_names[best_month]} (${monthly_revenue.max()})")
+print("АНАЛИЗ ПО ДНЯМ НЕДЕЛИ")
+weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+weekday_revenue = df.groupby("Weekday")["Total Amount"].sum().reindex(weekday_order)
+for day, rev in weekday_revenue.items():
+    print(f"{day}: ${rev}")
+print("СТАТИСТИКА ПО ЧЕКАМ")
+print(f"Минимальный чек: ${df['Total Amount'].min()}")
+print(f"Максимальный чек: ${df['Total Amount'].max()}")
+print(f"Медианный чек: ${df['Total Amount'].median()}")
+small_checks = len(df[df["Total Amount"] < 100])
+medium_checks = len(df[(df["Total Amount"] >= 100) & (df["Total Amount"] < 500)])
+large_checks = len(df[df["Total Amount"] >= 500])
+print(f"\nЧеков до $100: {small_checks}")
+print(f"Чеков от $100 до $500: {medium_checks}")
+print(f"Чеков от $500 и выше: {large_checks}")
